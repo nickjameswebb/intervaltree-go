@@ -32,32 +32,12 @@ func (tree *IntervalTree) Empty() bool {
     return tree.root == nil
 }
 
-func (tree *IntervalTree) Insert(i *Interval) {
+func (tree *IntervalTree) Insert(i Interval) {
     // Insert: inserts an interval
     if tree.Empty() {
         tree.root = newIntervalTreeNode(i)
     } else {
         tree.root.insert(i)
-    }
-}
-
-func (tree *IntervalTree) Max() (*Interval, error) {
-    // Max: furthest right interval (TODO: consider returning nil, no error)
-    if tree.Empty() {
-        return nil, errors.New("IntervalTree::Max requires non-empty tree.")
-    } else {
-        max := tree.root.max()
-        return max, nil
-    }
-}
-
-func (tree *IntervalTree) Min() (*Interval, error) {
-    // Min: furthest left interval (TODO: consider returning nil, no error)
-    if tree.Empty() {
-        return nil, errors.New("IntervalTree::Min requires non-empty tree.")
-    } else {
-        min := tree.root.min()
-        return min, nil
     }
 }
 
@@ -89,13 +69,13 @@ func (tree *IntervalTree) Overlaps(i Interval) bool {
     without having to contaminate interval class.
  */
 type IntervalTreeNode struct {
-    i *Interval
+    i Interval
     subTreeMax time.Time
     left *IntervalTreeNode
     right *IntervalTreeNode
 }
 
-func newIntervalTreeNode(i *Interval) *IntervalTreeNode {
+func newIntervalTreeNode(i Interval) *IntervalTreeNode {
     // TODO: return error if i is nil
     node := new(IntervalTreeNode)
     node.i = i
@@ -103,7 +83,7 @@ func newIntervalTreeNode(i *Interval) *IntervalTreeNode {
     return node
 }
 
-func (node *IntervalTreeNode) insert(i *Interval) *IntervalTreeNode  {
+func (node *IntervalTreeNode) insert(i Interval) *IntervalTreeNode  {
     start := node.i.Start()
 
     if i.End().Before(start) {
@@ -132,8 +112,8 @@ func (node *IntervalTreeNode) findOverlap(i Interval) []Interval {
     // TODO: be more efficient with searching, this is just going through every single node
     var overlaps []Interval
 
-    if Overlaps(*node.i, i) {
-        overlaps = append(overlaps, *node.i)
+    if Overlaps(node.i, i) {
+        overlaps = append(overlaps, node.i)
     }
 
     if node.left != nil {
@@ -147,25 +127,9 @@ func (node *IntervalTreeNode) findOverlap(i Interval) []Interval {
     return overlaps
 }
 
-func (node *IntervalTreeNode) max() *Interval {
-    if node.right != nil{
-        return node.right.max()
-    } else {
-        return node.i
-    }
-}
-
-func (node *IntervalTreeNode) min() *Interval {
-    if node.left != nil{
-        return node.left.min()
-    } else {
-        return node.i
-    }
-}
-
 func (node *IntervalTreeNode) overlaps(i Interval) bool {
     // TODO: be more efficient searching
-    if Overlaps(*node.i, i) {
+    if Overlaps(node.i, i) {
         return true
     } else if node.left != nil && node.left.overlaps(i) {
         return true
@@ -180,6 +144,8 @@ func (node *IntervalTreeNode) overlaps(i Interval) bool {
 
 /*
     Start and End times only. 
+    Pass these by value instead of pointer because don't want any 
+    unexpected modifications (would destroy integrity of tree) and its safer.
     TODO: polymorphic intervals
     Immutable start and end so that intervals are always valid.
  */
@@ -189,21 +155,22 @@ type Interval struct {
     // Payload PayLoad
 }
 
-func NewInterval(start time.Time, end time.Time) (*Interval, error) {
+func NewInterval(start time.Time, end time.Time) (Interval, error) {
+    var i Interval
     if start.After(end) {
-        return nil, errors.New("Interval::NewInterval end cannot come after start.")
+        return i, errors.New("Interval::NewInterval end cannot come after start.")
     } else if start.Equal(end) {
-        return nil, errors.New("Interval::NewInterval start cannot equal end.")
+        return i, errors.New("Interval::NewInterval start cannot equal end.")
     } else {
-        return &Interval{start, end}, nil
+        return Interval{start, end}, nil
     }
 }
 
-func (i *Interval) Start() time.Time {
+func (i Interval) Start() time.Time {
     return i.start
 }
 
-func (i *Interval) End() time.Time {
+func (i Interval) End() time.Time {
     return i.end
 }
 
